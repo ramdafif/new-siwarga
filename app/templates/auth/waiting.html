@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% from 'components.html' import icon %}
+{% block content %}
+<section class="waiting-card"><span class="waiting-symbol">{{ icon('clock', 40) }}</span><span class="eyebrow">SATU LANGKAH LAGI</span><h1>Halo, {{ current_user.nama.split()[0] }}.<br>Akun Anda sedang ditinjau.</h1><p>Pendaftaran berhasil! Pengurus RT {{ current_user.rt.nomor }} / RW {{ current_user.rw.nomor }} akan memverifikasi akun Anda. Setelah disetujui, Anda dapat mulai menyampaikan pengaduan.</p><div class="waiting-detail"><span>{{ icon('mail', 18) }} {{ current_user.email }}</span><span class="status-badge menunggu_verifikasi"><span></span> Menunggu verifikasi RT</span></div><a href="{{ url_for('auth.waiting') }}" class="button primary">Periksa status akun {{ icon('arrow', 18) }}</a><span class="field-hint">Belum ada perubahan? Hubungi pengurus RT Anda.</span></section>
+{% endblock %}

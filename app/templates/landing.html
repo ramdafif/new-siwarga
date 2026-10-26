@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% from 'components.html' import icon %}
+{% block content %}
+<section class="landing-hero">
+  <div class="landing-copy">
+    <span class="eyebrow"><span class="green-dot"></span> TERHUBUNG UNTUK LINGKUNGAN</span>
+    <h1>Suara warga.<br>Perubahan <span>nyata.</span></h1>
+    <p>Satu ruang untuk menyampaikan pengaduan, mengikuti penanganan, dan membangun lingkungan yang lebih baik bersama RT/RW Anda.</p>
+    <div class="hero-actions">
+      <a class="button primary large" href="{{ url_for('auth.register') }}">Mulai dari sini {{ icon('arrow', 18) }}</a>
+      <a class="text-link" href="#cara-kerja">Lihat cara kerja {{ icon('arrow-up', 17) }}</a>
+    </div>
+    <div class="landing-trust">
+      <span class="trust-icon">{{ icon('shield', 20) }}</span>
+      <span>Pengaduan terarah. Progres lebih transparan.<br><strong>Langsung terhubung dengan pengurus lingkungan Anda.</strong></span>
+    </div>
+    <div class="hero-principles" aria-label="Prinsip layanan">
+      <span>{{ icon('check-circle', 15) }} Mudah disampaikan</span>
+      <span>{{ icon('check-circle', 15) }} Jelas tindak lanjutnya</span>
+    </div>
+  </div>
+  <div class="landing-visual">
+    <div class="art-label"><span class="green-dot"></span> RUANG LINGKUNGAN KITA <span class="art-label-line"></span>{{ icon('home', 16) }}</div>
+    <div class="visual-heading"><span>Satu lingkungan.</span><strong>Saling terhubung.</strong></div>
+    {% include 'illustration.html' %}
+    <div class="floating-note note-one">
+      <span class="floating-icon">{{ icon('chat', 23) }}</span>
+      <div><strong>Setiap suara berarti.</strong><span>Sampaikan. Pantau. Selesaikan.</span></div>
+      {{ icon('check-circle', 20) }}
+    </div>
+    <div class="floating-note note-two">{{ icon('heart', 17) }} Dari warga, untuk warga.</div>
+    <div class="visual-footer"><span>KEPEDULIAN JADI TINDAKAN</span><span class="visual-footer-arrow">{{ icon('arrow', 17) }}</span></div>
+  </div>
+</section>
+<section class="landing-values" id="tentang">
+  <div><span class="eyebrow">KENALI SIWARGA</span><h2>Bukan sekadar laporan.<br>Ini tentang rumah kita.</h2></div>
+  <p>Dari lampu jalan yang padam hingga saluran air tersumbat, SiWarga memudahkan warga dan pengurus bekerja bersama. Setiap laporan punya ruang, setiap progres bisa dipantau.</p>
+  <div class="value-chip">{{ icon('leaf', 25) }}<span>Saling terhubung.<br><strong>Sama-sama bertumbuh.</strong></span></div>
+</section>
+<section class="how-section" id="cara-kerja">
+  <div class="section-heading"><span class="eyebrow">ALUR YANG LEBIH JELAS</span><h2>Dari laporan hingga penyelesaian.</h2><p>Tiga langkah sederhana untuk perubahan yang terasa.</p></div>
+  <div class="steps-grid">
+    <article class="step-card"><span class="step-number">01</span><span class="step-icon blue">{{ icon('file', 27) }}</span><h3>Sampaikan pengaduan</h3><p>Daftarkan akun, tunggu verifikasi RT, lalu ceritakan permasalahan dan tambahkan foto pendukung.</p><span class="step-caption">SUARA ANDA, LANGKAH PERTAMA {{ icon('arrow', 15) }}</span></article>
+    <article class="step-card"><span class="step-number">02</span><span class="step-icon teal">{{ icon('users', 27) }}</span><h3>Ditangani bersama</h3><p>Pengurus memverifikasi laporan dan berkoordinasi dengan Karang Taruna untuk menindaklanjutinya.</p><span class="step-caption">TERARAH KE PENGURUS YANG TEPAT {{ icon('arrow', 15) }}</span></article>
+    <article class="step-card"><span class="step-number">03</span><span class="step-icon mint">{{ icon('check-circle', 27) }}</span><h3>Pantau hingga tuntas</h3><p>Lihat riwayat, ikuti pembaruan, dan berdiskusi langsung dalam satu halaman pengaduan.</p><span class="step-caption">PROGRES DALAM SATU TEMPAT {{ icon('check', 15) }}</span></article>
+  </div>
+</section>
+<section class="landing-cta">
+  <span class="cta-heart">{{ icon('heart', 34) }}</span>
+  <div><span class="cta-eyebrow">LANGKAH KECIL, DAMPAK BERARTI</span><h2>Lingkungan lebih baik, mulai dari kita.</h2><p>Jadilah bagian dari lingkungan yang lebih peduli.</p></div>
+  <a class="button white" href="{{ url_for('auth.register') }}">Gabung SiWarga {{ icon('arrow', 18) }}</a>
+</section>
+{% endblock %}

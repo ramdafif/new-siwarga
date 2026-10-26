@@ -1,0 +1,81 @@
+{% from 'components.html' import icon, csrf_field with context %}
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#005baa">
+  <meta name="description" content="SiWarga, ruang bersama untuk menyampaikan dan memantau pengaduan lingkungan RT/RW.">
+  <title>{{ title|default('Ruang peduli warga') }} - SiWarga</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='branding/SiWarga-Icon.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/branding.css') }}">
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+{% set in_app = current_user.is_authenticated and current_user.status == 'ACTIVE' %}
+<body class="{{ 'app-page' if in_app else 'public-page' }}">
+<a class="skip-link" href="#main-content">Langsung ke konten</a>
+{% if in_app %}
+<div class="nav-backdrop" data-nav-close></div>
+<aside class="sidebar" id="sidebar" aria-label="Navigasi utama">
+  <a href="{{ url_for('main.dashboard') }}" class="brand" aria-label="SiWarga - Dashboard">
+    <img class="brand-symbol" src="{{ url_for('static', filename='branding/SiWarga-Mark.webp') }}" alt="" width="48" height="48">
+    <span class="brand-wordmark">Si<span class="brand-accent">Warga</span><small>Ruang peduli, ruang bersama.</small></span>
+  </a>
+  <div class="workspace-label"><span class="workspace-dot"></span> PORTAL {{ 'PENGELOLA' if current_user.role == 'SUPERADMIN' else 'LINGKUNGAN' }}</div>
+  <p class="nav-caption">MENU UTAMA</p>
+  <nav class="nav-links">
+    <a class="nav-item {{ 'active' if active_page == 'dashboard' }}" href="{{ url_for('main.dashboard') }}">{{ icon('grid') }}<span>Dashboard</span></a>
+    <a class="nav-item {{ 'active' if active_page == 'tickets' }}" href="{{ url_for('tickets.index') }}">{{ icon('file') }}<span>{{ 'Tugas saya' if current_user.role == 'KARANG_TARUNA' else ('Pengaduan saya' if current_user.role == 'WARGA' else 'Data pengaduan') }}</span></a>
+    {% if current_user.role == 'WARGA' %}<a class="nav-item {{ 'active' if active_page == 'new' }}" href="{{ url_for('tickets.create') }}">{{ icon('plus') }}<span>Buat pengaduan</span></a>{% endif %}
+    <a class="nav-item {{ 'active' if active_page == 'notifications' }}" href="{{ url_for('main.notifications') }}">{{ icon('bell') }}<span>Notifikasi</span>{% if unread_count %}<span class="nav-count">{{ unread_count }}</span>{% endif %}</a>
+  </nav>
+  {% if current_user.role in ['RT', 'SUPERADMIN'] %}<p class="nav-caption">PENGELOLAAN</p><nav class="nav-links">
+    {% if current_user.role == 'RT' %}<a class="nav-item {{ 'active' if active_page == 'residents' }}" href="{{ url_for('main.verify_residents') }}">{{ icon('users') }}<span>Verifikasi warga</span></a>{% endif %}
+    {% if current_user.role == 'SUPERADMIN' %}
+    <a class="nav-item {{ 'active' if active_page == 'regions' }}" href="{{ url_for('admin.regions') }}">{{ icon('pin') }}<span>Kelola wilayah</span></a>
+    <a class="nav-item {{ 'active' if active_page == 'users' }}" href="{{ url_for('admin.users') }}">{{ icon('users') }}<span>Pengurus & akun</span></a>
+    <a class="nav-item {{ 'active' if active_page == 'categories' }}" href="{{ url_for('admin.categories') }}">{{ icon('grid') }}<span>Kategori pengaduan</span></a>{% endif %}
+  </nav>{% endif %}
+  <p class="nav-caption">LAINNYA</p>
+  <nav class="nav-links"><a class="nav-item {{ 'active' if active_page == 'account' }}" href="{{ url_for('auth.account') }}">{{ icon('settings') }}<span>Pengaturan akun</span></a></nav>
+  <div class="sidebar-bottom">
+    <div class="sidebar-note"><span class="note-spark">{{ icon('heart', 20) }}</span><strong>Lingkungan baik,<br>mulai dari kita.</strong><p>Kepedulian kecil Anda membawa perubahan besar.</p><span class="note-line"></span></div>
+    <div class="sidebar-user"><a href="{{ url_for('auth.account') }}" class="avatar">{{ current_user.initials }}</a><div><strong>{{ current_user.nama }}</strong><span>{{ role_labels[current_user.role] }}</span></div><form method="post" action="{{ url_for('auth.logout') }}">{{ csrf_field() }}<button class="icon-button" aria-label="Keluar" title="Keluar">{{ icon('logout', 18) }}</button></form></div>
+  </div>
+</aside>
+<div class="app-workspace">
+  <header class="topbar">
+    <div class="breadcrumb"><button class="icon-button mobile-menu" type="button" data-nav-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Buka menu">{{ icon('menu') }}</button><span>Ruang warga</span>{{ icon('chevron', 13) }}<strong>{{ title|default('Dashboard') }}</strong></div>
+    <div class="topbar-right">{% if current_user.rw %}<span class="region-pill">{{ icon('pin', 15) }} RW {{ current_user.rw.nomor }}{% if current_user.rt %} <span class="muted">/</span> RT {{ current_user.rt.nomor }}{% endif %}</span>{% else %}<span class="region-pill">{{ icon('shield', 15) }} Semua wilayah</span>{% endif %}<a href="{{ url_for('main.notifications') }}" class="icon-button bell-button" aria-label="Notifikasi, {{ unread_count }} belum dibaca">{{ icon('bell', 21) }}{% if unread_count %}<span class="notification-dot"></span>{% endif %}</a><span class="topbar-divider"></span><a href="{{ url_for('auth.account') }}" class="avatar small-avatar" aria-label="Akun {{ current_user.nama }}">{{ current_user.initials }}</a></div>
+  </header>
+  <main class="main-content" id="main-content">
+{% else %}
+<header class="public-header">
+  <a class="brand" href="{{ url_for('main.landing') }}" aria-label="SiWarga - Beranda">
+    <img class="brand-symbol" src="{{ url_for('static', filename='branding/SiWarga-Mark.webp') }}" alt="" width="48" height="48">
+    <span class="brand-wordmark">Si<span class="brand-accent">Warga</span></span>
+  </a>
+  <nav aria-label="Navigasi publik">
+    <a class="public-nav-link" href="{{ url_for('main.landing') }}#tentang">Tentang SiWarga</a>
+    <a class="public-nav-link" href="{{ url_for('main.landing') }}#cara-kerja">Cara kerja</a>
+    {% if current_user.is_authenticated %}
+    <form method="post" action="{{ url_for('auth.logout') }}">{{ csrf_field() }}<button class="button secondary small">Keluar {{ icon('logout', 16) }}</button></form>
+    {% else %}
+    <a href="{{ url_for('auth.login') }}" class="login-link">Masuk</a>
+    <a class="button primary small" href="{{ url_for('auth.register') }}" aria-label="Daftar sebagai warga"><span class="registration-label">Daftar sebagai warga</span><span class="registration-label-mobile" aria-hidden="true">Daftar</span>{{ icon('arrow', 16) }}</a>
+    {% endif %}
+  </nav>
+</header>
+<main class="public-main" id="main-content">
+{% endif %}
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-container" aria-live="polite">{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ icon('check-circle' if category == 'success' else 'info', 20) }}<span>{{ message }}</span><button type="button" class="icon-button" data-dismiss aria-label="Tutup pemberitahuan">{{ icon('close', 16) }}</button></div>{% endfor %}</div>{% endif %}{% endwith %}
+{% block content %}{% endblock %}
+{% if in_app %}
+  <footer class="app-footer"><span>&copy; {{ today.year }} SiWarga. Dibangun untuk kebersamaan.</span><span class="footer-tag"><span></span> Satu lingkungan, saling peduli.</span></footer>
+  </main>
+</div>
+{% else %}</main><footer class="public-footer"><span>&copy; {{ today.year }} SiWarga &middot; Sistem Informasi Pengaduan Masyarakat</span><span>Dari warga, untuk lingkungan kita. {{ icon('heart', 14) }}</span></footer>{% endif %}
+</body>
+</html>

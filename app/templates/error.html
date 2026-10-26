@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% from 'components.html' import icon %}
+{% block content %}
+<section class="error-page"><span class="error-code">{{ code }}</span><h1>{{ 'Halaman tidak ditemukan.' if code == 404 else ('Ruang ini belum bisa diakses.' if code == 403 else 'Ada yang perlu diperiksa.') }}</h1><p>{{ message }}</p><a class="button primary" href="{{ url_for('main.dashboard' if current_user.is_authenticated else 'main.landing') }}">Kembali ke {{ 'dashboard' if current_user.is_authenticated else 'beranda' }} {{ icon('arrow', 17) }}</a></section>
+{% endblock %}
