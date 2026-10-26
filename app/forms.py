@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import MultipleFileField
-from wtforms import EmailField, PasswordField, SelectField, StringField, TextAreaField
+from wtforms import HiddenField, EmailField, PasswordField, SelectField, StringField, TextAreaField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, Regexp, ValidationError
 
 
@@ -42,6 +42,7 @@ class RegisterForm(FlaskForm):
 
 
 class ComplaintForm(FlaskForm):
+    submission_token = HiddenField("Token pengiriman", validators=[required()])
     judul = StringField("Judul pengaduan", filters=[clean_text], validators=[required(), Length(min=8, max=160, message="Judul harus terdiri dari 8-160 karakter.")])
     kategori_id = IndonesianSelectField("Kategori pengaduan", coerce=int, validators=[required()])
     lokasi_teks = StringField("Lokasi kejadian", filters=[clean_text], validators=[required(), Length(min=5, max=255, message="Lokasi harus terdiri dari 5-255 karakter.")])

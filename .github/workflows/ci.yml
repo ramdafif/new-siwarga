@@ -1,0 +1,61 @@
+name: SiWarga verification
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-password
+          MYSQL_DATABASE: siwarga_ci_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-password"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: --health-cmd="redis-cli ping" --health-interval=5s --health-timeout=3s --health-retries=12
+    env:
+      SECRET_KEY: ci-only-secret-key-longer-than-thirty-two-characters
+      DATABASE_URL: mysql+pymysql://root:ci-only-password@127.0.0.1:3306/siwarga_ci?charset=utf8mb4
+      TEST_DATABASE_URL: mysql+pymysql://root:ci-only-password@127.0.0.1:3306/siwarga_ci_test?charset=utf8mb4
+      TEST_REDIS_URL: redis://127.0.0.1:6379/15
+      LOGIN_RATE_LIMIT_BACKEND: memory
+      DEMO_PASSWORD: CiDemoPassword123!
+      APP_ENV: local
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements*.lock
+      - run: sudo apt-get update && sudo apt-get install -y default-mysql-client
+      - run: python -m pip install -r requirements-dev.lock
+      - run: python -c "import os,redis; assert os.environ['TEST_DATABASE_URL']; assert redis.Redis.from_url(os.environ['TEST_REDIS_URL']).ping()"
+      - run: python -c "import os; from sqlalchemy import create_engine,text; engine=create_engine(os.environ['TEST_DATABASE_URL']); connection=engine.connect(); connection.execute(text('CREATE DATABASE IF NOT EXISTS siwarga_ci_restore_test')); connection.execute(text('CREATE DATABASE IF NOT EXISTS siwarga_ci_recovery_drill_test')); connection.close()"
+      - run: mkdir -p test-results && python -m pytest --junitxml=test-results/pytest.xml
+      - run: python -c "import xml.etree.ElementTree as ET; root=ET.parse('test-results/pytest.xml').getroot(); assert not any(int(suite.get('skipped',0)) for suite in root.iter('testsuite')), 'CI must not skip integration tests'"
+      - run: python -m pip_audit -r requirements.lock --format json --output test-results/dependency-audit.json
+      - run: python -m playwright install --with-deps chromium
+      - name: Browser smoke test
+        run: |
+          python -m flask --app run.py seed-demo
+          python -m flask --app run.py run --port 5000 >test-results/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          python scripts/wait_ready.py
+          python scripts/smoke_browser.py
+        env:
+          DATABASE_URL: mysql+pymysql://root:ci-only-password@127.0.0.1:3306/siwarga_ci_test?charset=utf8mb4
+          PLAYWRIGHT_BROWSER: chromium
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-results
+          path: test-results/
+          retention-days: 14

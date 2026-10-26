@@ -4,12 +4,15 @@ from datetime import datetime, timedelta
 from flask import Blueprint, abort, flash, redirect, render_template, request, send_from_directory, current_app, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_, select
+from sqlalchemy.exc import IntegrityError
 
 from .constants import STATUSES
 from .forms import ComplaintForm
 from .models import Kategori, Komentar, Lampiran, Notifikasi, Pengaduan, RT, RiwayatStatus, TindakLanjut, User, db, utcnow
-from .permissions import get_ticket, roles_required, scoped_tickets
-from .uploads import commit_with_uploads, validate_uploads
+from .permissions import get_ticket, require_ticket_access, roles_required, scoped_tickets
+from .uploads import commit_with_uploads, validate_uploads, variant_filename
+from .security import issue_submission_token, read_submission_token
+from .query_options import summary_options
 
 bp = Blueprint("tickets", __name__)
 
@@ -58,7 +61,7 @@ def ensure_processing(ticket):
 @bp.get("/pengaduan")
 @login_required
 def index():
-    statement = scoped_tickets()
+    statement = scoped_tickets().options(*summary_options())
     query = request.args.get("q", "").strip()[:160]
     if query:
         statement = statement.where(or_(Pengaduan.judul.contains(query, autoescape=True),
@@ -98,19 +101,33 @@ def index():
 @roles_required("WARGA")
 def create():
     form = ComplaintForm()
+    if request.method == "GET":
+        form.submission_token.data = issue_submission_token(current_user.id)
     categories = db.session.scalars(select(Kategori).where(Kategori.aktif.is_(True)).order_by(Kategori.nama)).all()
     form.kategori_id.choices = [(0, "Pilih kategori pengaduan")] + [(item.id, item.nama) for item in categories]
+    if request.method == "POST":
+        submission = read_submission_token(form.submission_token.data, current_user.id)
+        existing_id = db.session.scalar(select(Pengaduan.id).where(Pengaduan.pelapor_id == current_user.id, Pengaduan.submission_token == submission))
+        if existing_id:
+            return redirect(url_for("tickets.detail", id=existing_id))
     if form.validate_on_submit():
         prepared = validate_uploads(request.files.getlist("foto"))
         rt = db.session.get(RT, current_user.rt_id)
         if not rt or rt.rw_id != current_user.rw_id:
             abort(403)
         ticket = Pengaduan(nomor_tiket=f"SW-{utcnow():%Y%m}-{secrets.token_hex(5).upper()}",
-                           pelapor_id=current_user.id, rt_id=current_user.rt_id, kategori_id=form.kategori_id.data,
+                           pelapor_id=current_user.id, submission_token=submission, rt_id=current_user.rt_id, kategori_id=form.kategori_id.data,
                            judul=form.judul.data.strip(), deskripsi=form.deskripsi.data.strip(),
                            lokasi_teks=form.lokasi_teks.data.strip(), status="MENUNGGU_VERIFIKASI")
         db.session.add(ticket)
-        db.session.flush()
+        try:
+            db.session.flush()
+        except IntegrityError:
+            db.session.rollback()
+            existing_id = db.session.scalar(select(Pengaduan.id).where(Pengaduan.pelapor_id == current_user.id, Pengaduan.submission_token == submission))
+            if existing_id:
+                return redirect(url_for("tickets.detail", id=existing_id))
+            raise
         db.session.add(RiwayatStatus(pengaduan_id=ticket.id, aktor_id=current_user.id, status_lama=None,
                                     status_baru=ticket.status, catatan="Pengaduan dikirim. Menunggu verifikasi pengurus RT."))
         notify(ticket, f"Pengaduan baru {ticket.nomor_tiket}: {ticket.judul}", include_managers=True)
@@ -226,8 +243,13 @@ def attachment(id):
     file = db.session.get(Lampiran, id)
     if not file:
         abort(404)
-    get_ticket(file.pengaduan_id)
-    response = send_from_directory(current_app.config["UPLOAD_FOLDER"], file.nama_tersimpan,
-                                   download_name=file.nama_asli, max_age=0)
+    require_ticket_access(file.pengaduan_id)
+    variant = request.args.get("variant", "original")
+    if variant not in {"original", "thumbnail", "display"}:
+        abort(400, description="Varian foto tidak valid.")
+    stored = file.nama_tersimpan if variant == "original" else variant_filename(file.nama_tersimpan, variant)
+    response = send_from_directory(current_app.config["UPLOAD_FOLDER"], stored,
+                                   download_name=file.nama_asli if variant == "original" else stored,
+                                   mimetype="image/webp" if variant != "original" else None, max_age=0)
     response.headers["Cache-Control"] = "private, no-store"
     return response

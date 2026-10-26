@@ -43,7 +43,7 @@ try {
     }
     & $python scripts/check_database.py
     if ($LASTEXITCODE -ne 0) { throw 'Cannot connect to MySQL 8. Check .env and the database server.' }
-    & $python -m flask --app run.py db upgrade
+    & $python -m flask --app run.py upgrade-safe
     if ($LASTEXITCODE -ne 0) { throw 'Database migration failed.' }
     if ($Seed) {
         & $python -m flask --app run.py seed-demo

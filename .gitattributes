@@ -1,0 +1,3 @@
+deploy/** text eol=lf
+.github/** text eol=lf
+requirements*.lock text eol=lf

@@ -1,8 +1,8 @@
 # ERD SiWarga
 
 Semua data utama disimpan di MySQL 8 menggunakan InnoDB/utf8mb4. Primary key
-berupa integer auto-increment; waktu disimpan UTC. Sepuluh tabel bisnis berikut
-dibuat melalui migrasi awal. Tabel `alembic_version` adalah metadata migrasi,
+berupa integer auto-increment; waktu disimpan UTC. Sepuluh tabel bisnis awal
+ditambah audit_event pada migrasi penguatan. Tabel `alembic_version` adalah metadata migrasi,
 bukan tabel bisnis tambahan.
 
 ## Relasi
@@ -37,7 +37,7 @@ erDiagram
    beberapa RW tanpa bertabrakan.
 3. **`users`**: PK `id`; FK nullable `rw_id -> rw.id`, `rt_id -> rt.id`;
    `nama`, `email` unik, `no_hp` opsional, `password_hash`, `role`, `status`,
-   `must_change_password`, `created_at`. Role dan status menggunakan ENUM.
+   `must_change_password`, `session_version` (default 1), `created_at`. Role dan status menggunakan ENUM.
    Check constraint mengharuskan wilayah sesuai role: SUPERADMIN tanpa
    RW/RT, RW/KARANG_TARUNA dengan RW tanpa RT, RT/WARGA dengan keduanya.
    Kecocokan RT dalam RW divalidasi server pada registrasi/pengelolaan akun.
@@ -49,7 +49,8 @@ erDiagram
    `rt_id -> rt.id`, `kategori_id -> kategori_pengaduan.id`; FK nullable
    `ditugaskan_ke_id -> users.id`; `judul`, `deskripsi`, `lokasi_teks`,
    `status`, `alasan_penolakan` opsional, `created_at`, `updated_at`,
-   `selesai_at` opsional. Dua relasi ke User memakai `foreign_keys` eksplisit.
+   `selesai_at` opsional; `submission_token` nullable dengan unique constraint
+   `(pelapor_id, submission_token)` untuk retry formulir. Dua relasi ke User memakai `foreign_keys` eksplisit.
    RW tiket diturunkan dari RT, tidak disalin, agar tidak ada dua sumber wilayah.
 6. **`lampiran`**: PK `id`; FK `pengaduan_id -> pengaduan.id`,
    `uploader_id -> users.id`; `nama_asli`, `nama_tersimpan` unik (UUID),
@@ -67,6 +68,10 @@ erDiagram
 10. **`notifikasi`**: PK `id`; FK `user_id -> users.id`; FK nullable
     `pengaduan_id -> pengaduan.id`; `pesan`, `sudah_dibaca`, `created_at`.
     Notifikasi akun dapat ada tanpa tiket. Penyaringan selalu menurut penerima.
+
+11. **`audit_event`**: PK id; actor_id/target_id nullable (referensi logis,
+    tanpa FK); event, outcome, request_id, details JSON, created_at dengan indeks.
+    Audit perubahan akun disimpan dalam transaksi administratif yang sama.
 
 Semua kolom inti NOT NULL kecuali yang disebut opsional/nullable. FK tidak
 menggunakan penghapusan cascade: laporan dan audit bukan data yang boleh ikut

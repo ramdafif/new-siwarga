@@ -1,0 +1,17 @@
+global:
+  smtp_smarthost: 'SMTP_HOST:587'
+  smtp_from: 'siwarga@EXAMPLE.ORG'
+  smtp_auth_username: 'SMTP_USER'
+  smtp_auth_password_file: '/etc/siwarga/smtp-password'
+  smtp_require_tls: true
+route:
+  receiver: pengelola
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 2h
+receivers:
+  - name: pengelola
+    email_configs:
+      - to: 'ADMIN_UTAMA@EXAMPLE.ORG, ADMIN_CADANGAN@EXAMPLE.ORG'
+        send_resolved: true

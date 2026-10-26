@@ -2,9 +2,11 @@ from email_validator import EmailNotValidError, validate_email
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import lazyload, selectinload
 
 from .models import Kategori, Pengaduan, RT, RW, User, db
 from .permissions import roles_required
+from .security import revoke_sessions, security_event
 from .tickets import integer_field, required_text
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -30,7 +32,7 @@ def region_number():
 @bp.get("/wilayah")
 @roles_required("SUPERADMIN")
 def regions():
-    rws = db.session.scalars(select(RW).order_by(RW.nomor)).all()
+    rws = db.session.scalars(select(RW).options(selectinload(RW.rts)).order_by(RW.nomor)).all()
     users_per_rw = dict(db.session.execute(select(User.rw_id, func.count()).group_by(User.rw_id)).all())
     return render_template("admin/regions.html", title="Kelola wilayah", active_page="regions", rws=rws, users_per_rw=users_per_rw)
 
@@ -142,6 +144,8 @@ def users():
         user = User()
         fill_user(user, creating=True)
         db.session.add(user)
+        db.session.flush()
+        security_event("account.created", target=user, details={"role": user.role, "rw_id": user.rw_id, "rt_id": user.rt_id})
         return save("Akun pengurus dibuat. Pengguna wajib mengganti kata sandi saat masuk pertama kali.", "admin.users")
     statement = select(User).order_by(User.created_at.desc(), User.id.desc())
     role = request.args.get("role", "")
@@ -156,11 +160,16 @@ def users():
 @bp.post("/pengurus/<int:id>")
 @roles_required("SUPERADMIN")
 def edit_user(id):
-    user = db.get_or_404(User, id)
+    user = db.session.scalar(select(User).where(User.id == id).options(lazyload("*")).with_for_update())
+    if not user:
+        abort(404)
     if user.role == "SUPERADMIN":
         abort(403, description="Akun superadmin tidak dapat diubah dari pengelolaan pengurus.")
+    previous = {"role": user.role, "rw_id": user.rw_id, "rt_id": user.rt_id, "status": user.status}
     if request.form.get("aksi") == "toggle":
         user.status = "INACTIVE" if user.status == "ACTIVE" else "ACTIVE"
     else:
         fill_user(user)
+    revoke_sessions(user)
+    security_event("account.updated", target=user, details={"before": previous, "after": {"role": user.role, "rw_id": user.rw_id, "rt_id": user.rt_id, "status": user.status}, "password_reset": bool(request.form.get("password"))})
     return save("Data akun berhasil diperbarui.", "admin.users")

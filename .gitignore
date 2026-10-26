@@ -9,3 +9,10 @@ __pycache__/
 .coverage
 htmlcov/
 test-results/
+*.env.local
+deploy/app.env
+deploy/backup.env
+*.sql
+*.cnf
+*.prom
+.env.validation

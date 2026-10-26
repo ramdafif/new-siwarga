@@ -12,6 +12,8 @@ from .models import Kategori, Notifikasi, Pengaduan, RT, RW, RiwayatStatus, Tind
 @with_appcontext
 def seed_demo():
     """Tambahkan data demo tanpa menimpa data atau password yang sudah ada."""
+    if current_app.config.get("APP_ENV") == "production":
+        raise click.ClickException("Seed demo dilarang pada lingkungan produksi.")
     password = current_app.config.get("DEMO_PASSWORD")
     if not password or not 10 <= len(password) <= 128:
         raise click.ClickException("Isi DEMO_PASSWORD (10-128 karakter) di .env, khusus pengembangan lokal.")

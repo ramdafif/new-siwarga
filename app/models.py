@@ -20,13 +20,24 @@ def utcnow():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+class AuditEvent(db.Model):
+    __tablename__ = "audit_event"
+    id = db.Column(db.Integer, primary_key=True)
+    actor_id = db.Column(db.Integer)
+    target_id = db.Column(db.Integer)
+    event = db.Column(db.String(60), nullable=False)
+    outcome = db.Column(db.String(16), nullable=False)
+    request_id = db.Column(db.String(32), nullable=False)
+    details = db.Column(db.JSON, nullable=False, default=dict)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
+
 class RW(db.Model):
     __tablename__ = "rw"
     id = db.Column(db.Integer, primary_key=True)
     nomor = db.Column(db.String(8), nullable=False, unique=True)
     nama_wilayah = db.Column(db.String(120), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
-    rts = db.relationship("RT", back_populates="rw", lazy="selectin")
+    rts = db.relationship("RT", back_populates="rw", lazy="select")
 
 
 class RT(db.Model):
@@ -59,6 +70,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.Enum(*ROLES, name="user_role"), nullable=False, index=True)
     status = db.Column(db.Enum(*USER_STATUSES, name="user_status"), nullable=False, default="PENDING", index=True)
     must_change_password = db.Column(db.Boolean, nullable=False, default=False)
+    session_version = db.Column(db.Integer, nullable=False, default=1, server_default="1")
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
     rw = db.relationship("RW", foreign_keys=[rw_id], lazy="joined")
     rt = db.relationship("RT", foreign_keys=[rt_id], lazy="joined")
@@ -84,8 +96,10 @@ class Kategori(db.Model):
 
 class Pengaduan(db.Model):
     __tablename__ = "pengaduan"
+    __table_args__ = (db.UniqueConstraint("pelapor_id", "submission_token", name="uq_pengaduan_submission"),)
     id = db.Column(db.Integer, primary_key=True)
     nomor_tiket = db.Column(db.String(30), nullable=False, unique=True)
+    submission_token = db.Column(db.String(64))
     pelapor_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     rt_id = db.Column(db.Integer, db.ForeignKey("rt.id"), nullable=False, index=True)
     kategori_id = db.Column(db.Integer, db.ForeignKey("kategori_pengaduan.id"), nullable=False, index=True)

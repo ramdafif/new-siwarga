@@ -11,7 +11,7 @@ demo, dan MySQL 8 portabel di folder `.local` yang diabaikan Git. Database lokal
 menggunakan `127.0.0.1:13308`, terpisah dari server database lain di komputer ini.
 
 ~~~powershell
-cd D:/Projects/Capstone
+cd 'D:/Projects/CP/Capstone copy'
 ./start.ps1
 ~~~
 
@@ -37,6 +37,23 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\start.ps1 -DebugMode
 Jika tampilan lama masih tersimpan di browser, lakukan hard refresh dengan
 Ctrl+F5 setelah aplikasi berjalan.
 
+## Penguatan teknis versi copy
+
+Konfigurasi .env lokal tetap sama; tidak ada database aplikasi baru untuk menjalankan
+copy. Database bersama sudah menerima migrasi aditif bbb234424314. Jalankan startup
+versi copy karena checkout lama belum mengenal revision ini; cookie lama perlu login
+ulang. Foto lama dapat diproses dengan flask --app run.py backfill-photos.
+
+Preview WebP privat, query ringkasan ringan, idempotensi laporan, pencabutan sesi,
+audit akun, health/metrics, dan telemetry browser sudah tersedia. Lokal tetap bisa
+berjalan tanpa Redis; backend bersama wajib sebelum staging/multi-worker.
+
+Bukti dan batas hasil lokal: docs/VALIDATION.md.
+Dokumentasi lanjutan: docs/TECHNICAL.md untuk interface/tes/benchmark,
+docs/OPERATIONS.md untuk deployment/backup/insiden, dan docs/PILOT.md untuk
+panduan warga/pengurus dan penerimaan satu RW. Template deploy/ dan CI belum
+merupakan bukti layanan eksternal/produksi sudah terpasang.
+
 ## Identitas visual
 
 Tampilan menggunakan warna biru, teal, dan hijau dari
@@ -59,7 +76,7 @@ membuat database. Instruksi berikut memakai PowerShell; di Linux/macOS gunakan
 ~~~powershell
 python -m venv .venv
 ./.venv/Scripts/Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements.lock
 Copy-Item .env.example .env
 python -c "import secrets; print(secrets.token_urlsafe(48))"
 ~~~
@@ -155,7 +172,7 @@ Tiket seed memiliki awalan `SW-DEMO`; tiket baru memakai `SW-YYYYMM-<acak>`.
   Data yang sudah direferensikan dilindungi; kategori bisa dinonaktifkan dan
   akun dinonaktifkan, bukan dihapus, demi menjaga riwayat.
 - Login dibatasi lima percobaan gagal per email dan 30 per IP selama 15 menit,
-  dengan penyimpanan memori proses. Semua POST dilindungi CSRF.
+  dengan backend memori untuk lokal atau Redis bersama untuk deployment. Semua POST dilindungi CSRF.
 - Waktu disimpan dalam UTC dan ditampilkan sebagai WIB. Aset font disimpan
   lokal sehingga UI tidak bergantung pada Google Fonts/CDN saat dibuka.
 
@@ -172,6 +189,9 @@ CREATE USER 'siwarga_test'@'localhost' IDENTIFIED BY 'PASSWORD_TEST_ACAK';
 GRANT ALL PRIVILEGES ON siwarga_test.* TO 'siwarga_test'@'localhost';
 ~~~
 
+Tambahkan schema restore khusus dan hak akses sebagaimana docs/TECHNICAL.md; tes
+backup memakai MySQL client 8 dan mengosongkan schema recovery_drill_test miliknya.
+
 Isi `TEST_DATABASE_URL` di `.env`, sesuai contoh berikut dengan password Anda:
 
 ~~~dotenv
@@ -179,6 +199,7 @@ TEST_DATABASE_URL=mysql+pymysql://siwarga_test:PASSWORD_TEST@127.0.0.1:3306/siwa
 ~~~
 
 ~~~powershell
+./.venv/Scripts/python.exe -m pip install -r requirements-dev.lock
 ./.venv/Scripts/python.exe -m compileall -q app run.py tests scripts
 ./.venv/Scripts/python.exe -m pytest -q
 flask --app run.py db check
@@ -196,7 +217,7 @@ berhasil. Jika diisi tetapi server tidak tersedia, tes gagal secara eksplisit.
 Jalankan aplikasi dan seed terlebih dahulu. Chrome diperlukan untuk skrip ini.
 
 ~~~powershell
-pip install -r requirements-dev.txt
+pip install -r requirements-dev.lock
 python scripts/smoke_browser.py
 ~~~
 
@@ -211,7 +232,7 @@ tidak membuat/mengubah pengaduan. Jangan jalankan pada server produksi.
 ~~~text
 app/
   __init__.py        Factory, konfigurasi, CSRF, session, error handler
-  models.py         Sepuluh tabel inti dan relasi SQLAlchemy
+  models.py         Tabel inti, audit akun, dan relasi SQLAlchemy
   auth.py           Login, registrasi, status pending, ganti password
   permissions.py    Scope tiket dan pembatasan role
   tickets.py        Pengaduan, verifikasi, penugasan, progres, komentar
@@ -248,12 +269,12 @@ Untuk MySQL portabel proyek ini, kredensial administratif disimpan di
 
 ## Batasan yang disengaja
 
-Ini MVP capstone untuk demo lokal, **bukan klaim siap produksi**. Tidak ada
-email/SMS/WhatsApp/push, fitur real-time, peta/GPS, NIK/KTP, integrasi pemerintah,
-atau reset password melalui email. Notifikasi diperbarui saat halaman dimuat.
-Reset password dilakukan admin. Rate limit masih per proses dan hilang saat
-restart; belum ada antivirus, penyimpanan objek, audit login, atau backup
-otomatis. Row lock melindungi mutasi status, tetapi server Flask bawaan bukan
-server deployment produksi. Sebelum penggunaan publik diperlukan HTTPS,
-`SESSION_COOKIE_SECURE=true`, server WSGI, rate limit bersama, backup, dan
-peninjauan keamanan/operasional lanjutan.
+Ini tetap MVP yang diperkuat, bukan klaim siap produksi. Notifikasi warga hanya
+dalam aplikasi; tidak ada email/SMS/WhatsApp/push, real-time, peta/GPS, NIK/KTP,
+integrasi pemerintah, atau reset password melalui email. Tidak ada antivirus atau
+object storage. Penghapusan data mengikuti SOP pengelola, bukan cron penghapus foto.
+
+Redis, HTTPS, WSGI, monitoring, dan backup online sudah memiliki implementasi/template,
+tetapi masih perlu pemasangan, secret, repository remote, penerima alert, dan uji
+server tujuan. Backup/restore lokal tidak membuktikan RPO/RTO produksi. Pilot satu
+RT dan persetujuan pengurus tetap menjadi syarat perluasan penggunaan.

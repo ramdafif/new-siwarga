@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup SiWarga at 03:00 and 15:00 WIB
+
+[Timer]
+OnCalendar=*-*-* 03,15:00:00 Asia/Jakarta
+Persistent=true
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

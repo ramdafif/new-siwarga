@@ -26,13 +26,14 @@ def capture(page, name):
 
 
 def main():
-    password = dotenv_values(ROOT / ".env").get("DEMO_PASSWORD")
+    password = os.getenv("DEMO_PASSWORD") or dotenv_values(ROOT / ".env").get("DEMO_PASSWORD")
     if not password:
         raise SystemExit("Seed data and DEMO_PASSWORD are required.")
     OUTPUT.mkdir(parents=True, exist_ok=True)
     errors = []
     with sync_playwright() as automation:
-        browser = automation.chromium.launch(channel="chrome", headless=True)
+        channel = os.getenv("PLAYWRIGHT_BROWSER", "chrome")
+        browser = automation.chromium.launch(headless=True, **({} if channel == "chromium" else {"channel": channel}))
         context = browser.new_context(viewport={"width": 1440, "height": 1000}, device_scale_factor=1, reduced_motion="reduce")
         page = context.new_page()
         page.on("pageerror", lambda error: errors.append(str(error)))

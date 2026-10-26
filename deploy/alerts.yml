@@ -1,0 +1,68 @@
+groups:
+  - name: siwarga
+    rules:
+      - alert: SiWargaUnavailable
+        expr: up{job="siwarga"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: 'Aplikasi SiWarga tidak dapat dipantau'}
+      - alert: SiWargaDatabaseUnavailable
+        expr: siwarga_database_up == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: 'MySQL SiWarga tidak dapat diakses'}
+      - alert: SiWargaLoginBackendUnavailable
+        expr: siwarga_login_backend_up == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: 'Redis login SiWarga tidak dapat diakses'}
+      - alert: SiWargaHighErrorRate
+        expr: sum(rate(siwarga_http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(siwarga_http_requests_total[5m])), 0.001) > 0.001
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: 'HTTP 5xx melebihi 0,1 persen'}
+      - alert: SiWargaSlowPages
+        expr: histogram_quantile(0.95, sum by (le, endpoint) (rate(siwarga_http_duration_seconds_bucket{method="GET"}[5m]))) > 1
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: 'p95 halaman GET melebihi satu detik'}
+      - alert: SiWargaDiskLow
+        expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes < 0.2
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: 'Ruang disk tersisa kurang dari 20 persen'}
+      - alert: SiWargaMemoryHigh
+        expr: 1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes > 0.8
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: 'Pemakaian memori melebihi 80 persen'}
+      - alert: SiWargaCPUHigh
+        expr: 1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) > 0.8
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: 'Pemakaian CPU melebihi 80 persen'}
+      - alert: SiWargaDatabaseConnectionsHigh
+        expr: siwarga_database_connections / siwarga_database_connection_limit > 0.8
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: 'Koneksi MySQL melebihi 80 persen kapasitas'}
+      - alert: SiWargaBackupStale
+        expr: time() - siwarga_backup_last_success_timestamp_seconds > 64800 or absent(siwarga_backup_last_success_timestamp_seconds)
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: 'Tidak ada backup berhasil dalam 18 jam terakhir'}
+      - alert: SiWargaBackupServiceFailed
+        expr: node_systemd_unit_state{name="siwarga-backup.service",state="failed"} == 1
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: 'Service backup gagal sebelum atau selama penulisan metrics'}
+      - alert: SiWargaTextfileCollectorFailed
+        expr: node_textfile_scrape_error == 1
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: 'Metrics backup tidak bisa dibaca node exporter'}
+      - alert: SiWargaBackupFailed
+        expr: siwarga_backup_last_attempt_success == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: 'Backup atau verifikasi repository gagal'}

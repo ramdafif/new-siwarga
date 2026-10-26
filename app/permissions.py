@@ -2,7 +2,8 @@ from functools import wraps
 
 from flask import abort
 from flask_login import current_user, login_required
-from sqlalchemy import select
+from sqlalchemy import and_, select
+from sqlalchemy.orm import lazyload
 
 from .models import Pengaduan, RT, db
 
@@ -19,28 +20,40 @@ def roles_required(*roles):
     return decorator
 
 
-def scoped_tickets(user=None):
+def ticket_scope_filter(user=None, joined_region=False):
     user = user or current_user
-    statement = select(Pengaduan).join(RT, Pengaduan.rt_id == RT.id)
     if user.status != "ACTIVE":
-        return statement.where(False)
+        return False
     if user.role == "SUPERADMIN":
-        return statement
+        return True
     if user.role == "WARGA":
-        return statement.where(Pengaduan.pelapor_id == user.id)
+        return Pengaduan.pelapor_id == user.id
+    region = RT.rw_id == user.rw_id if joined_region else Pengaduan.rt.has(RT.rw_id == user.rw_id)
     if user.role == "RT":
-        return statement.where(Pengaduan.rt_id == user.rt_id, RT.rw_id == user.rw_id)
+        return and_(Pengaduan.rt_id == user.rt_id, region)
     if user.role == "RW":
-        return statement.where(RT.rw_id == user.rw_id)
+        return region
     if user.role == "KARANG_TARUNA":
-        return statement.where(Pengaduan.ditugaskan_ke_id == user.id, RT.rw_id == user.rw_id)
-    return statement.where(False)
+        return and_(Pengaduan.ditugaskan_ke_id == user.id, region)
+    return False
+
+
+def scoped_tickets(user=None):
+    return select(Pengaduan).join(RT, Pengaduan.rt_id == RT.id).where(ticket_scope_filter(user, joined_region=True))
+
+
+def require_ticket_access(ticket_id):
+    ticket_id = db.session.scalar(scoped_tickets().with_only_columns(Pengaduan.id).where(Pengaduan.id == ticket_id))
+    if ticket_id is None:
+        abort(404)
 
 
 def get_ticket(ticket_id, lock=False):
-    statement = scoped_tickets().where(Pengaduan.id == ticket_id)
     if lock:
-        statement = statement.with_for_update()
+        statement = (select(Pengaduan).where(Pengaduan.id == ticket_id, ticket_scope_filter())
+                     .options(lazyload("*")).with_for_update().execution_options(populate_existing=True))
+    else:
+        statement = scoped_tickets().where(Pengaduan.id == ticket_id)
     ticket = db.session.execute(statement).unique().scalar_one_or_none()
     if ticket is None:
         abort(404)

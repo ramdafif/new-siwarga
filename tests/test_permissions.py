@@ -5,6 +5,7 @@ from PIL import Image
 from sqlalchemy import func, select
 
 from app.models import Lampiran, Notifikasi, Pengaduan, RiwayatStatus, User, db
+from app.security import issue_submission_token
 
 
 def photo():
@@ -15,7 +16,7 @@ def photo():
 
 
 def payload(data):
-    return {"judul": "Saluran air tersumbat di Jalan Melati", "kategori_id": data["category"].id,
+    return {"submission_token": issue_submission_token(data["users"]["owner"].id), "judul": "Saluran air tersumbat di Jalan Melati", "kategori_id": data["category"].id,
             "lokasi_teks": "Depan pos ronda Jalan Melati", "deskripsi": "Saluran air dipenuhi daun dan perlu dibersihkan agar tidak meluap saat hujan."}
 
 

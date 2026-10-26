@@ -1,2 +1,6 @@
 -r requirements.txt
+pytest>=8.3,<10
+requests>=2.32,<3
 playwright>=1.55,<2
+fakeredis[lua]>=2.26,<3
+pip-audit>=2.9,<3

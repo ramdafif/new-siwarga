@@ -1,0 +1,19 @@
+[Unit]
+Description=SiWarga online verified remote backup
+After=network-online.target mysql.service
+
+[Service]
+Type=oneshot
+User=siwarga
+Group=siwarga
+WorkingDirectory=/srv/siwarga/current
+EnvironmentFile=/etc/siwarga/app.env
+EnvironmentFile=/etc/siwarga/backup.env
+ExecStart=/usr/bin/bash /srv/siwarga/current/deploy/backup.sh
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/siwarga
+TimeoutStartSec=7200

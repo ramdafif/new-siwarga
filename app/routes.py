@@ -3,10 +3,13 @@ from datetime import timedelta
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import func, select, update
+from sqlalchemy.orm import lazyload
 
 from .constants import STATUSES
 from .models import Kategori, Notifikasi, Pengaduan, RiwayatStatus, User, db, utcnow
 from .permissions import roles_required, scoped_tickets
+from .security import revoke_sessions, security_event
+from .query_options import summary_options
 
 bp = Blueprint("main", __name__)
 
@@ -25,7 +28,7 @@ def dashboard():
     counts = {status: 0 for status in STATUSES}
     counts.update(dict(db.session.execute(select(scope.c.status, func.count()).group_by(scope.c.status)).all()))
     total = sum(counts.values())
-    recent = db.session.execute(scoped_tickets().order_by(Pengaduan.created_at.desc(), Pengaduan.id.desc()).limit(5)).unique().scalars().all()
+    recent = db.session.execute(scoped_tickets().options(*summary_options()).order_by(Pengaduan.created_at.desc(), Pengaduan.id.desc()).limit(5)).unique().scalars().all()
     activities = db.session.scalars(select(RiwayatStatus).where(RiwayatStatus.pengaduan_id.in_(select(scope.c.id)))
                                    .order_by(RiwayatStatus.created_at.desc(), RiwayatStatus.id.desc()).limit(4)).all()
     local_now = utcnow() + timedelta(hours=7)
@@ -97,13 +100,15 @@ def verify_residents():
 @roles_required("RT")
 def verify_resident(id):
     user = db.session.scalar(select(User).where(User.id == id, User.role == "WARGA", User.rt_id == current_user.rt_id,
-                                               User.rw_id == current_user.rw_id).with_for_update())
+                                               User.rw_id == current_user.rw_id).options(lazyload("*")).with_for_update())
     if not user:
         abort(404)
     action = request.form.get("aksi")
     if action not in {"terima", "nonaktifkan"}:
         abort(400)
     user.status = "ACTIVE" if action == "terima" else "INACTIVE"
+    revoke_sessions(user)
+    security_event("resident.verified" if action == "terima" else "resident.deactivated", target=user)
     db.session.add(Notifikasi(user_id=user.id, pesan="Akun Anda telah diverifikasi. Selamat bergabung di SiWarga!" if action == "terima" else "Akun Anda dinonaktifkan oleh pengurus RT. Hubungi pengurus untuk informasi."))
     db.session.commit()
     flash(f"Akun {user.nama} berhasil {'diaktifkan' if action == 'terima' else 'dinonaktifkan'}.", "success")

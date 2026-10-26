@@ -12,6 +12,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/branding.css') }}">
   <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  {% if config.ENABLE_WEB_VITALS and current_user.is_authenticated and current_user.status == 'ACTIVE' %}
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="telemetry-page" content="{{ request.endpoint }}">
+  <script type="module" src="{{ url_for('static', filename='js/vitals.js') }}"></script>
+  {% endif %}
 </head>
 {% set in_app = current_user.is_authenticated and current_user.status == 'ACTIVE' %}
 <body class="{{ 'app-page' if in_app else 'public-page' }}">
