@@ -68,7 +68,7 @@
   </tr>{% endfor %}</tbody>
 </table></div>
 {% else %}
-<div class="empty-state"><span class="empty-icon">{{ icon('file', 30) }}</span><h3>Belum ada pengaduan</h3><p>{% if current_user.role == 'KARANG_TARUNA' %}Tugas yang diberikan pengurus akan muncul di sini.{% else %}Setiap kepedulian berarti. Laporan Anda akan muncul di sini.{% endif %}</p>{% if current_user.role == 'WARGA' %}<a href="{{ url_for('tickets.create') }}" class="button primary small">{{ icon('plus', 16) }} Buat pengaduan</a>{% endif %}</div>
+<div class="empty-state"><span class="empty-icon">{{ icon('file', 30) }}</span><h3>Belum ada pengaduan</h3><p>{% if current_user.role == 'KARANG_TARUNA' %}Tugas yang diberikan pengurus akan muncul di sini.{% else %}Setiap kepedulian berarti. Laporan Anda akan muncul di sini.{% endif %}</p>{% if current_user.role == 'WARGA' %}<a href="{{ url_for('tickets.create', _method='GET') }}" class="button primary small">{{ icon('plus', 16) }} Buat pengaduan</a>{% endif %}</div>
 {% endif %}
 {% endmacro %}
 

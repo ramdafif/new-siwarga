@@ -33,7 +33,7 @@
   <nav class="nav-links">
     <a class="nav-item {{ 'active' if active_page == 'dashboard' }}" href="{{ url_for('main.dashboard') }}">{{ icon('grid') }}<span>Dashboard</span></a>
     <a class="nav-item {{ 'active' if active_page == 'tickets' }}" href="{{ url_for('tickets.index') }}">{{ icon('file') }}<span>{{ 'Tugas saya' if current_user.role == 'KARANG_TARUNA' else ('Pengaduan saya' if current_user.role == 'WARGA' else 'Data pengaduan') }}</span></a>
-    {% if current_user.role == 'WARGA' %}<a class="nav-item {{ 'active' if active_page == 'new' }}" href="{{ url_for('tickets.create') }}">{{ icon('plus') }}<span>Buat pengaduan</span></a>{% endif %}
+    {% if current_user.role == 'WARGA' %}<a class="nav-item {{ 'active' if active_page == 'new' }}" href="{{ url_for('tickets.create', _method='GET') }}">{{ icon('plus') }}<span>Buat pengaduan</span></a>{% endif %}
     <a class="nav-item {{ 'active' if active_page == 'notifications' }}" href="{{ url_for('main.notifications') }}">{{ icon('bell') }}<span>Notifikasi</span>{% if unread_count %}<span class="nav-count">{{ unread_count }}</span>{% endif %}</a>
   </nav>
   {% if current_user.role in ['RT', 'SUPERADMIN'] %}<p class="nav-caption">PENGELOLAAN</p><nav class="nav-links">

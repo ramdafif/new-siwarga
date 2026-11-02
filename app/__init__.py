@@ -157,8 +157,11 @@ def create_app(test_config=None):
     def http_error(error):
         messages = {403: "Anda tidak memiliki izin untuk membuka halaman atau melakukan tindakan ini.",
                     404: "Halaman atau data tidak ditemukan dalam akses Anda.",
+                    405: "Metode permintaan tidak diizinkan. Buka halaman melalui menu atau kirim formulir dari halaman yang sesuai.",
                     413: "Unggahan terlalu besar. Maksimal 3 foto, masing-masing 3 MB."}
-        return render_template("error.html", code=error.code, message=messages.get(error.code, error.description)), error.code
+        response = error.get_response()
+        response.set_data(render_template("error.html", code=error.code, message=messages.get(error.code, error.description)))
+        return response
 
     @app.errorhandler(SQLAlchemyError)
     @app.errorhandler(500)
