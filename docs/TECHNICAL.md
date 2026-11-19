@@ -76,11 +76,20 @@ rusak, command keluar nonzero dan mencetak ID terkait tanpa isi fotonya.
 - Redis unavailable: login 503, tidak fallback ke memori. Redis harus tunggal
   per lingkungan; implementasi ini tidak menargetkan Redis Cluster.
 - Alamat email/IP untuk key rate limit di-HMAC, bukan disimpan mentah.
+- Akun dicari menggunakan collation MySQL sebelum membentuk key limiter. Jika
+  ditemukan, email tersimpan menjadi identitas kanonik; alias huruf besar,
+  aksen, atau Unicode yang dianggap sama oleh database berbagi batas akun.
+  Akun Unicode lama tetap dapat login; tidak ada migrasi identitas/email.
 - session_version dicatat dalam cookie sesi bertanda tangan. Reset/ganti
   password, perubahan akun, dan perubahan status warga mencabut sesi lama.
   Password mandiri yang berhasil mempertahankan hanya sesi saat ini. Masa cookie
   tidak digeser oleh GET biasa; respons telemetry tidak pernah menulis cookie
   sesi, termasuk ketika datang terlambat sesudah logout.
+- Logout menaikkan session_version secara transaksional bersama audit logout.
+  Cookie yang disalin tidak lagi berlaku pada request berikutnya. Konsekuensi
+  yang disengaja: logout mencabut semua perangkat akun, bukan hanya perangkat
+  saat ini. Request lain yang sudah lolos pemeriksaan tidak dibatalkan di tengah
+  jalan. Tidak ada perubahan schema sesi atau pembersihan data produksi.
 - AuditEvent mencatat event, outcome, actor/target ID, request ID, detail terbatas,
   dan waktu UTC. Mutasi administratif dan audit berada dalam transaksi sama.
   Log sukses baru diterbitkan setelah commit; rollback membuang antrean log.

@@ -10,7 +10,7 @@ from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFError, CSRFProtect
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, SecurityError
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .constants import ROLE_LABELS, STATUSES, STATUS_LABELS
@@ -99,6 +99,8 @@ def create_app(test_config=None):
 
     @app.before_request
     def check_account():
+        if isinstance(request.routing_exception, SecurityError):
+            return None
         if request.endpoint in {"static", "ops.live", "ops.ready", "ops.metrics"}:
             return None
         if not current_user.is_authenticated:
@@ -145,7 +147,7 @@ def create_app(test_config=None):
             "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; "
             "script-src 'self'; font-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         )
-        if request.endpoint not in {"static", "ops.live", "ops.ready", "ops.metrics"} and current_user.is_authenticated:
+        if not isinstance(request.routing_exception, SecurityError) and request.endpoint not in {"static", "ops.live", "ops.ready", "ops.metrics"} and current_user.is_authenticated:
             response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -155,6 +157,11 @@ def create_app(test_config=None):
 
     @app.errorhandler(HTTPException)
     def http_error(error):
+        if isinstance(error, SecurityError):
+            response = error.get_response()
+            response.set_data("Host permintaan tidak diizinkan.")
+            response.mimetype = "text/plain"
+            return response
         messages = {403: "Anda tidak memiliki izin untuk membuka halaman atau melakukan tindakan ini.",
                     404: "Halaman atau data tidak ditemukan dalam akses Anda.",
                     405: "Metode permintaan tidak diizinkan. Buka halaman melalui menu atau kirim formulir dari halaman yang sesuai.",

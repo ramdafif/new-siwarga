@@ -106,6 +106,16 @@ atau RTO server produksi. Lakukan latihan sebelum pilot dan berkala setelah rili
 ## Monitoring dan alert
 
 Pasang prometheus.yml, alerts.yml, dan konfigurasi Alertmanager yang sudah diisi.
+Contoh generik memakai Gunicorn dan scrape target `127.0.0.1:8000`.
+`deploy/app.env.example` mengizinkan hostname domain dan `127.0.0.1` agar
+scrape langsung tidak ditolak trusted-host validation. Ganti domain dengan
+domain tujuan; jangan memakai wildcard atau menambahkan hostname tidak perlu.
+Untuk instalasi yang memakai port lain (misalnya 5010), samakan target scrape
+dengan bind worker yang sebenarnya; jangan mengganti port aplikasi live hanya
+agar cocok dengan contoh. Perubahan `.env` memerlukan restart worker terencana.
+Uji `/health/ready` dan `/metrics` dari loopback; pastikan `/metrics` tetap
+ditolak dari publik oleh Nginx. File contoh bukan bukti layanan sudah terpasang.
+
 Semua UI/port monitoring bind ke loopback atau jaringan admin. Node exporter
 memakai --collector.textfile.directory=/var/lib/siwarga/metrics serta
 --collector.systemd --collector.systemd.unit-include=siwarga.*; pastikan mode

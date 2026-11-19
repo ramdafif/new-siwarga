@@ -4,6 +4,17 @@ Sistem Informasi Pengaduan Masyarakat RT/RW. Aplikasi capstone berbahasa
 Indonesia dengan Flask server-rendered, Jinja, CSS responsif, JavaScript vanilla,
 dan **MySQL 8**. Tidak menggunakan React, API eksternal berbayar, atau SQLite.
 
+## Persiapan capstone dan rilis
+
+- Status perbaikan dan 23 poin kesiapan: [RELEASE-2026-11-10](docs/RELEASE-2026-11-10.md).
+- Katalog seluruh endpoint, autentikasi, input, dan contoh respons: [HTTP](docs/HTTP.md).
+- Form bukti UAT dan dampak yang harus diisi dengan hasil nyata: [EVIDENCE](docs/EVIDENCE.md).
+- Instalasi Linux, backup, monitoring, dan pemulihan: [OPERATIONS](docs/OPERATIONS.md).
+
+Bagian Windows berikut adalah panduan lingkungan lokal awal, bukan konfigurasi
+VPS saat ini. Perubahan kode di checkout tidak sama dengan deployment: restart
+worker dan konfigurasi layanan tetap merupakan langkah operator terpisah.
+
 ## Menjalankan hasil yang sudah disiapkan di komputer ini
 
 Proyek ini dilengkapi virtual environment, konfigurasi lokal, migrasi, data
@@ -171,8 +182,9 @@ Tiket seed memiliki awalan `SW-DEMO`; tiket baru memakai `SW-YYYYMM-<acak>`.
 - Admin dapat mengubah/menghapus wilayah dan kategori yang belum digunakan.
   Data yang sudah direferensikan dilindungi; kategori bisa dinonaktifkan dan
   akun dinonaktifkan, bukan dihapus, demi menjaga riwayat.
-- Login dibatasi lima percobaan gagal per email dan 30 per IP selama 15 menit,
+- Login dibatasi lima percobaan gagal per identitas akun dan 30 per IP selama 15 menit,
   dengan backend memori untuk lokal atau Redis bersama untuk deployment. Semua POST dilindungi CSRF.
+- Logout mencabut seluruh sesi akun di semua perangkat, termasuk cookie salinan.
 - Waktu disimpan dalam UTC dan ditampilkan sebagai WIB. Aset font disimpan
   lokal sehingga UI tidak bergantung pada Google Fonts/CDN saat dibuka.
 

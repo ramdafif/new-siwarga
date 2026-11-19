@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import lazyload, selectinload
 
 from .models import Kategori, Pengaduan, RT, RW, User, db
+from .navigation import requested_page
 from .permissions import roles_required
 from .security import revoke_sessions, security_event
 from .tickets import integer_field, required_text
@@ -26,7 +27,7 @@ def region_number():
     number = required_text("nomor", 1, 3)
     if not number.isascii() or not number.isdigit() or int(number) < 1:
         abort(400, description="Nomor wilayah harus berupa angka 1-999.")
-    return number.zfill(2)
+    return f"{int(number):02d}"
 
 
 @bp.get("/wilayah")
@@ -144,14 +145,18 @@ def users():
         user = User()
         fill_user(user, creating=True)
         db.session.add(user)
-        db.session.flush()
+        try:
+            db.session.flush()
+        except IntegrityError:
+            db.session.rollback()
+            abort(409, description="Email sudah digunakan. Gunakan email lain untuk akun pengurus.")
         security_event("account.created", target=user, details={"role": user.role, "rw_id": user.rw_id, "rt_id": user.rt_id})
         return save("Akun pengurus dibuat. Pengguna wajib mengganti kata sandi saat masuk pertama kali.", "admin.users")
     statement = select(User).order_by(User.created_at.desc(), User.id.desc())
     role = request.args.get("role", "")
     if role in {"SUPERADMIN", "RW", "RT", "KARANG_TARUNA", "WARGA"}:
         statement = statement.where(User.role == role)
-    pagination = db.paginate(statement, per_page=12, error_out=False)
+    pagination = db.paginate(statement, page=requested_page(), per_page=12, error_out=False)
     rws = db.session.scalars(select(RW).order_by(RW.nomor)).all()
     rts = db.session.scalars(select(RT).order_by(RT.rw_id, RT.nomor)).all()
     return render_template("admin/users.html", title="Pengurus & akun", active_page="users", pagination=pagination, rws=rws, rts=rts)

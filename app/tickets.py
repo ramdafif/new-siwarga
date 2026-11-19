@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from .constants import STATUSES
 from .forms import ComplaintForm
 from .models import Kategori, Komentar, Lampiran, Notifikasi, Pengaduan, RT, RiwayatStatus, TindakLanjut, User, db, utcnow
+from .navigation import requested_page
 from .permissions import get_ticket, require_ticket_access, roles_required, scoped_tickets
 from .uploads import commit_with_uploads, validate_uploads, variant_filename
 from .security import issue_submission_token, read_submission_token
@@ -82,18 +83,20 @@ def index():
         if value:
             try:
                 date = datetime.strptime(value, "%Y-%m-%d") - timedelta(hours=7)
-            except ValueError:
+                if date.year < 1000:
+                    raise ValueError
+                boundary = date + timedelta(days=1) if end_of_day else date
+            except (ValueError, OverflowError):
                 abort(400, description="Tanggal filter tidak valid.")
-            statement = statement.where(column < date + timedelta(days=1)) if end_of_day else statement.where(column >= date)
-    pagination = db.paginate(statement.order_by(Pengaduan.created_at.desc(), Pengaduan.id.desc()), per_page=10, error_out=False)
+            statement = statement.where(column < boundary) if end_of_day else statement.where(column >= boundary)
+    pagination = db.paginate(statement.order_by(Pengaduan.created_at.desc(), Pengaduan.id.desc()), page=requested_page(), per_page=10, error_out=False)
     categories = db.session.scalars(select(Kategori).order_by(Kategori.nama)).all()
     rt_statement = select(RT).order_by(RT.nomor)
     if current_user.role != "SUPERADMIN":
         rt_statement = rt_statement.where(RT.rw_id == current_user.rw_id)
     rts = db.session.scalars(rt_statement).all()
-    page_links = {page: url_for("tickets.index", **dict(request.args.to_dict(), page=page)) for page in pagination.iter_pages() if page}
     return render_template("pengaduan/index.html", title="Tugas saya" if current_user.role == "KARANG_TARUNA" else "Pengaduan",
-                           active_page="tickets", pagination=pagination, categories=categories, rts=rts, page_links=page_links)
+                           active_page="tickets", pagination=pagination, categories=categories, rts=rts)
 
 
 @bp.get("/pengaduan/baru")

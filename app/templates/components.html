@@ -73,5 +73,8 @@
 {% endmacro %}
 
 {% macro pagination_nav(pagination, endpoint) %}
-{% if pagination.pages > 1 %}<nav class="pagination" aria-label="Navigasi halaman"><span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span><div>{% for number in pagination.iter_pages() %}{% if number %}<a href="{{ url_for(endpoint, **dict(request.args.to_dict(), page=number)) }}" class="page-link{% if number == pagination.page %} current{% endif %}" {% if number == pagination.page %}aria-current="page"{% endif %}>{{ number }}</a>{% else %}<span>...</span>{% endif %}{% endfor %}</div></nav>{% endif %}
+{% set allowed = {'tickets.index': ['q', 'status', 'kategori', 'rt', 'dari', 'sampai'], 'admin.users': ['role'], 'main.verify_residents': ['status'], 'main.notifications': []} %}
+{% set filters = {} %}
+{% for name in allowed.get(endpoint, []) if name in request.args %}{% set ignored = filters.update({name: request.args[name]}) %}{% endfor %}
+{% if pagination.pages > 1 %}<nav class="pagination" aria-label="Navigasi halaman"><span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span><div>{% for number in pagination.iter_pages() %}{% if number %}<a href="{{ url_for(endpoint, page=number, **filters) }}" class="page-link{% if number == pagination.page %} current{% endif %}" {% if number == pagination.page %}aria-current="page"{% endif %}>{{ number }}</a>{% else %}<span>...</span>{% endif %}{% endfor %}</div></nav>{% endif %}
 {% endmacro %}

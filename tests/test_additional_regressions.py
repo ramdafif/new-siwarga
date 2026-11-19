@@ -102,7 +102,7 @@ def test_late_telemetry_cannot_resurrect_logged_out_cookie(app, client, login, d
     assert client.post("/logout").status_code == 302
     late = stale.post("/telemetry/vitals", json={"name": "CLS", "value": .01, "page": "main.dashboard"},
                       headers={"User-Agent": "late-background-request"})
-    assert late.status_code == 204
+    assert late.status_code == 302
     assert "Set-Cookie" not in late.headers
     assert client.get("/dashboard").location.partition("?")[0] == "/login"
 

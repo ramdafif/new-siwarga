@@ -23,14 +23,14 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         email = form.email.data.strip().lower()
-        keys = login_keys(email, request.remote_addr)
+        user = db.session.scalar(select(User).where(User.email == email))
+        keys = login_keys(user.email if user else email, request.remote_addr)
         token = secrets.token_hex(16)
         try:
             limiter = login_limiter()
             if not limiter.reserve(keys, token):
                 security_event("login.throttled", outcome="denied", details={"account": fingerprint(email), "client": fingerprint(request.remote_addr or "unknown")}, commit=True)
                 abort(429, description="Terlalu banyak percobaan masuk. Silakan coba kembali 15 menit lagi.")
-            user = db.session.scalar(select(User).where(User.email == email))
             valid = user.check_password(form.password.data) if user else check_password_hash(_dummy_hash, form.password.data)
             success = bool(user and valid and user.status != "INACTIVE")
             limiter.finish(keys, token, success)
@@ -97,7 +97,11 @@ def waiting():
 @bp.post("/logout")
 @login_required
 def logout():
-    security_event("logout", commit=True)
+    user = db.session.execute(select(User).where(User.id == current_user.id).options(lazyload("*"))
+                              .with_for_update().execution_options(populate_existing=True)).scalar_one()
+    if session.get("account_version") == user.session_version:
+        revoke_sessions(user)
+        security_event("logout", target=user, details={"scope": "all_sessions"}, commit=True)
     logout_user()
     session.clear()
     flash("Anda telah keluar dengan aman.", "success")

@@ -7,6 +7,7 @@ from sqlalchemy.orm import lazyload
 
 from .constants import STATUSES
 from .models import Kategori, Notifikasi, Pengaduan, RiwayatStatus, User, db, utcnow
+from .navigation import requested_page
 from .permissions import roles_required, scoped_tickets
 from .security import revoke_sessions, security_event
 from .query_options import summary_options
@@ -58,7 +59,7 @@ def dashboard():
 @login_required
 def notifications():
     pagination = db.paginate(select(Notifikasi).where(Notifikasi.user_id == current_user.id)
-                             .order_by(Notifikasi.created_at.desc(), Notifikasi.id.desc()), per_page=15, error_out=False)
+                             .order_by(Notifikasi.created_at.desc(), Notifikasi.id.desc()), page=requested_page(), per_page=15, error_out=False)
     return render_template("notifications.html", title="Notifikasi", active_page="notifications", pagination=pagination)
 
 
@@ -71,7 +72,12 @@ def read_notification(id):
     notification.sudah_dibaca = True
     db.session.commit()
     if notification.pengaduan_id:
-        return redirect(url_for("tickets.detail", id=notification.pengaduan_id))
+        visible_id = db.session.scalar(scoped_tickets().with_only_columns(Pengaduan.id)
+                                      .where(Pengaduan.id == notification.pengaduan_id))
+        if visible_id is not None:
+            return redirect(url_for("tickets.detail", id=visible_id))
+        flash("Akses pengaduan pada notifikasi ini sudah berubah. Silakan periksa tugas atau hubungi pengurus.", "info")
+        return redirect(url_for("main.notifications"))
     return redirect(url_for("main.verify_residents" if current_user.role == "RT" else "main.notifications"))
 
 
@@ -92,7 +98,7 @@ def verify_residents():
         abort(400)
     pagination = db.paginate(select(User).where(User.role == "WARGA", User.rt_id == current_user.rt_id,
                                                User.rw_id == current_user.rw_id, User.status == status)
-                             .order_by(User.created_at.desc()), per_page=15, error_out=False)
+                             .order_by(User.created_at.desc()), page=requested_page(), per_page=15, error_out=False)
     return render_template("rt/residents.html", title="Verifikasi warga", active_page="residents", pagination=pagination, selected_status=status)
 
 
