@@ -1,6 +1,6 @@
 # Lampiran audit tambahan SiWarga - 19 November 2026
 
-Dokumen induk: [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md).
+Dokumen induk: [PRODUCTION_READINESS.md](../PRODUCTION_READINESS.md).
 Status: **backlog tambahan, belum implementasi atau sertifikasi siap live**.
 Zona waktu baseline: Asia/Jakarta.
 

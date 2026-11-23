@@ -5,7 +5,7 @@ Lingkup: `/home/gajiku/app/elkyno/siwarga` dan hasil audit deployment terkait.
 Status dokumen: **rencana perbaikan; belum merupakan persetujuan go-live**.
 
 Tambahan audit yang dikirim pengguna telah dipetakan ke checklist ini dan
-[AUDIT_SUPPLEMENT_2026-11-19.md](AUDIT_SUPPLEMENT_2026-11-19.md). Lampiran itu
+[AUDIT_SUPPLEMENT_2026-11-19.md](audits/AUDIT_SUPPLEMENT_2026-11-19.md). Lampiran itu
 memuat koreksi batas klaim, cakupan yang dilaporkan, dan paket PR-17 sampai
 PR-24. Keduanya satu backlog; jangan menjalankan implementasi hanya dari
 ringkasan audit tanpa membaca kriteria lulus dan batas operasinya.
@@ -47,7 +47,7 @@ Hal-hal ini dipertahankan dan diuji ulang setelah perubahan, bukan dibangun ulan
 | Tes 10 November 2026 | 212 tes lulus tanpa skip; smoke browser 5 role, 27 screenshot, tanpa error JS/overflow | Bukti historis, bukan tes baru dalam pekerjaan dokumentasi ini |
 | Beban sintetis | 48 request pada 1 dan 3 sesi dalam artefak rilis | Smoke saja, bukan bukti kapasitas satu RW atau SLO |
 
-Sumber baseline: [RELEASE-2026-11-10.md](RELEASE-2026-11-10.md),
+Sumber baseline: [RELEASE-2026-11-10.md](releases/RELEASE-2026-11-10.md),
 `test-results/release/verification-summary.json`,
 `test-results/release/source-manifest.json`, dan
 `test-results/live-restart-2026-11-10/checks.json`.
@@ -532,7 +532,7 @@ berada di direktori yang diabaikan Git.
 
 Rujukan: [DEPLOYMENT_ELKYNO.md](DEPLOYMENT_ELKYNO.md),
 [OPERATIONS.md](OPERATIONS.md), [TECHNICAL.md](TECHNICAL.md),
-[HTTP.md](HTTP.md), [RELEASE-2026-11-10.md](RELEASE-2026-11-10.md).
+[HTTP.md](HTTP.md), [RELEASE-2026-11-10.md](releases/RELEASE-2026-11-10.md).
 
 - [ ] Sinkronkan topologi, port 5010, unit service, domain, lokasi konfigurasi,
   status DNS/TLS, dan prosedur deploy dengan keadaan aktual bertanggal;
@@ -559,7 +559,7 @@ catatan latihan operator cadangan, dan persetujuan serah terima.
 yang semuanya ditemukan. Bukti 10 November dipakai sebagai baseline pembanding.
 
 Rujukan: `tests/`, `.github/workflows/ci.yml`,
-[RELEASE-2026-11-10.md](RELEASE-2026-11-10.md), [HTTP.md](HTTP.md).
+[RELEASE-2026-11-10.md](releases/RELEASE-2026-11-10.md), [HTTP.md](HTTP.md).
 
 - [ ] Jalankan seluruh tes unit/integrasi MySQL/Redis serta browser smoke
   lima role pada kandidat rilis; tidak boleh ada skip/gagal yang disembunyikan.
@@ -585,7 +585,7 @@ checklist deployment yang disanitasi, dan keputusan operator.
 ### Paket pelengkap PR-17 sampai PR-24
 
 Detail temuan, tindakan, kriteria lulus, dan bukti delapan paket lanjutan ada di
-[lampiran audit tambahan](AUDIT_SUPPLEMENT_2026-11-19.md). Pakai ID dari tabel
+[lampiran audit tambahan](audits/AUDIT_SUPPLEMENT_2026-11-19.md). Pakai ID dari tabel
 induk ini saat menutup issue agar temuan lama dan baru tidak dihitung dua kali.
 Optimasi seperti HTTP/2, offload media, atau format font dipilih berdasarkan
 kompatibilitas/hasil ukur, bukan dianggap syarat keamanan universal.

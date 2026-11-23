@@ -1,18 +1,27 @@
+# Konfigurasi dan data lokal
 .env
 .env.test
-.venv/
-.local/
-instance/
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.coverage
-htmlcov/
-test-results/
+.env.validation
 *.env.local
 deploy/app.env
 deploy/backup.env
+.local/
+instance/
 *.sql
 *.cnf
 *.prom
-.env.validation
+
+# Environment dan cache Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Artefak pengujian dan coverage
+test-results/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
