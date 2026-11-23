@@ -6,7 +6,8 @@ dan **MySQL 8**. Tidak menggunakan React, API eksternal berbayar, atau SQLite.
 
 ## Persiapan capstone dan rilis
 
-- Status perbaikan dan 23 poin kesiapan: [RELEASE-2026-11-10](docs/RELEASE-2026-11-10.md).
+- Indeks dokumentasi dan panduan struktur: [docs/README.md](docs/README.md).
+- Status perbaikan dan 23 poin kesiapan: [RELEASE-2026-11-10](docs/releases/RELEASE-2026-11-10.md).
 - Katalog seluruh endpoint, autentikasi, input, dan contoh respons: [HTTP](docs/HTTP.md).
 - Form bukti UAT dan dampak yang harus diisi dengan hasil nyata: [EVIDENCE](docs/EVIDENCE.md).
 - Instalasi Linux, backup, monitoring, dan pemulihan: [OPERATIONS](docs/OPERATIONS.md).
@@ -22,7 +23,7 @@ demo, dan MySQL 8 portabel di folder `.local` yang diabaikan Git. Database lokal
 menggunakan `127.0.0.1:13308`, terpisah dari server database lain di komputer ini.
 
 ~~~powershell
-cd 'D:/Projects/CP/Capstone copy'
+cd 'D:/Projects/CP/Capstone2'
 ./start.ps1
 ~~~
 
@@ -257,10 +258,25 @@ app/
 migrations/         Alembic / Flask-Migrate
 tests/              Tes integrasi MySQL dengan pytest
 scripts/            Pemeriksaan database dan browser, setup lokal satu kali
+deploy/             Template deployment, monitoring, dan backup
+docs/               Panduan teknis, ERD, operasi, dan kebutuhan
+  audits/           Temuan audit bertanggal
+  releases/         Catatan rilis bertanggal
+  archive/          Prompt awal sebagai referensi historis
+.github/workflows/  Verifikasi CI
+.local/             MySQL portabel, data database, dan backup lokal (abaikan Git)
+instance/           Foto privat dan berkas runtime aplikasi (abaikan Git)
+test-results/       Bukti pengujian dan benchmark lokal (abaikan Git)
+.venv/              Dependensi Python lokal (abaikan Git)
 start.ps1           Menjalankan hasil lokal tanpa mengubah layanan lain
 run.py              Entry point Flask
-ERD.md              Relasi, PK/FK, dan alasan desain
+requirements*.txt   Deklarasi dependensi runtime dan pengembangan
+requirements*.lock Versi dependensi terkunci untuk instalasi/CI
 ~~~
+
+Relasi database tersedia di [docs/ERD.md](docs/ERD.md). Panduan penempatan
+berkas, backup SQL lokal, dan pembersihan cache ada di
+[indeks dokumentasi](docs/README.md#menjaga-workspace-tetap-rapi).
 
 ## Reset database demo lokal
 
